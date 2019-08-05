@@ -1,11 +1,16 @@
-import telegram
 import requests as re
 from pprint import pprint
 from bs4 import BeautifulSoup
 from flask import Flask, request
 from datetime import datetime, date, timedelta
+
+import telegram
+from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+
 from baddybot.credentials import bot_token, bot_user_name, URL
 from baddybot.mastermind import get_response
+from baddybot import crawlers
 
 app = Flask(__name__)
 
@@ -14,6 +19,34 @@ TOKEN = bot_token
 global bot
 bot = telegram.Bot(token=TOKEN)
 
+## Basic requirement to establish the webhook
+@app.route('/setwebhook', methods=['GET', 'POST'])
+def set_webhook():
+    s = bot.setWebhook('{URL}/{HOOK}'.format(URL=URL, HOOK=TOKEN))
+    if s:
+        return "webhook setup ok"
+    else:
+        return "webhook setup failed"
+
+def handle_getCourts():
+    # if len(content) == 2:
+    #     CC = content[0]
+    #     bdate = datetime.strptime(content[1], '%Y-%m-%d').date()
+    #     response = crawlers.getAvailability(CC, bdate)
+    # else:
+    #     response = crawlers.getAvailability('4330ccmcpa-bm', date.today()+timedelta(days=16))
+    keyboard = [
+        [
+            InlineKeyboardButton("Option 1", callback_data='1'),
+            InlineKeyboardButton("Option 2", callback_data='2')
+        ],
+        [InlineKeyboardButton("Option 3", callback_data='3')]
+    ]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    return reply_markup
+
+## Main handler for any messages transmitted via the webhook
+@app.route('/{}'.format(TOKEN), methods=['POST'])
 def respond():
     # retrieve the message in JSON and then transform it to Telegram object
     app.logger.debug('received update')
@@ -34,36 +67,13 @@ def respond():
         command = text.split()[0]
         content = text[len(command)+1:].split()
         if command == '/getcourts':
-            if len(content) == 2:
-                CC = content[0]
-                bdate = datetime.strptime(content[1], '%Y-%m-%d').date()
-                response = getAvailability(CC, bdate)
-            else:
-                response = getAvailability('4330ccmcpa-bm', date.today()+timedelta(days=16))
+            reply = handle_getCourts()
+            bot.sendMessage(chat_id=chat_id, text='Please choose:', reply_markup=reply)
         else:
-            response = "You sent for the command: {}\nParameters in context: {}".format(command, content)
-        bot.sendMessage(chat_id=chat_id, text=response)
-    else:
-        # do nothing unless it's a command
-        pass
+            reply = "Unsupported command: {}".format(command)
+            bot.sendMessage(chat_id=chat_id, text=reply)
 
     return 'ok'
-
-@app.route('/setwebhook', methods=['GET', 'POST'])
-def set_webhook():
-    # we use the bot object to link the bot to our app which live
-    # in the link provided by URL
-    s = bot.setWebhook('{URL}/{HOOK}'.format(URL=URL, HOOK=TOKEN))
-
-    # something to let us know things work
-    if s:
-        return "webhook setup ok"
-    else:
-        return "webhook setup failed"
-
-@app.route('/')
-def hello():
-    return "Hello World!"
 
 if __name__ == '__main__':
     app.run(threaded=True)
