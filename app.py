@@ -3,7 +3,7 @@ import requests as re
 from pprint import pprint
 from bs4 import BeautifulSoup
 from flask import Flask, request
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
 from baddybot.credentials import bot_token, bot_user_name, URL
 from baddybot.mastermind import get_response
 
