@@ -6,6 +6,8 @@ from flask import Flask, request
 from datetime import date, timedelta
 from baddybot.credentials import bot_token, bot_user_name, URL
 from baddybot.mastermind import get_response
+from baddybot.constants import STATUSMAP
+
 app = Flask(__name__)
 
 global TOKEN
@@ -41,12 +43,6 @@ def respond():
 
 
 
-STATUSMAP = {
-    'normal':'N',
-    'peak':'P',
-    'booked':'B',
-    'notAvailable':'NA'
-}
 
 def getAvailability(CCcode, bookingdate):
     res = re.get('https://www.onepa.sg/facilities/{}?date={}'.format(CCcode, bookingdate))
