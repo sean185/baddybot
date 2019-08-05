@@ -11,6 +11,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from baddybot.credentials import bot_token, bot_user_name, URL
 from baddybot.mastermind import get_response
 from baddybot import crawlers
+from baddybot.constants import WISHLIST, COMMUNITYCLUBS
 
 app = Flask(__name__)
 
@@ -18,6 +19,8 @@ global TOKEN
 TOKEN = bot_token
 global bot
 bot = telegram.Bot(token=TOKEN)
+global CCLIST
+CCLIST = [COMMUNITYCLUBS[i] for i in WISHLIST]
 
 ## Basic requirement to establish the webhook
 @app.route('/setwebhook', methods=['GET', 'POST'])
@@ -35,13 +38,7 @@ def handle_getCourts():
     #     response = crawlers.getAvailability(CC, bdate)
     # else:
     #     response = crawlers.getAvailability('4330ccmcpa-bm', date.today()+timedelta(days=16))
-    keyboard = [
-        [
-            InlineKeyboardButton("Option 1", callback_data='1'),
-            InlineKeyboardButton("Option 2", callback_data='2')
-        ],
-        [InlineKeyboardButton("Option 3", callback_data='3')]
-    ]
+    keyboard = [[InlineKeyboardButton(CC[1], callback_data=CC[0])] for CC in CCLIST]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
 
