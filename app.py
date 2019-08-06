@@ -38,7 +38,13 @@ def handle_getCourts():
     #     response = crawlers.getAvailability(CC, bdate)
     # else:
     #     response = crawlers.getAvailability('4330ccmcpa-bm', date.today()+timedelta(days=16))
-    keyboard = [[InlineKeyboardButton(CC[1], callback_data=CC[0])] for CC in CCLIST]
+    keyboard = [[InlineKeyboardButton(CC[1], callback_data='CC.'+CC[0])] for CC in CCLIST]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    return reply_markup
+
+def handle_getCourtsGetDate(court):
+    dates = [date.today()+timedelta(days=i) for i in range(16)]
+    keyboard = [[InlineKeyboardButton(d.strftime('%m-%d'), callback_data='BD.'+d.strftime('%m-%d')+'.'+court)] for d in dates]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
 
@@ -50,7 +56,20 @@ def respond():
     json_res = request.get_json(force=True)
     pprint(json_res)
     update = telegram.Update.de_json(json_res, bot)
-    # print("got update:", update)
+
+    # handle callbacks / interactive responses
+    if hasattr(update, 'callback_query'):
+        data = update.callback_query.data
+        chat_id = update.callback_data.from.id
+        if data.startswith('CC.'):
+            court = data[3:]
+            reply = handle_getCourtsGetDate(court)
+            bot.sendMessage(chat_id=chat_id, text='Please choose:', reply_markup=reply)
+        if data.startswith('BD.'):
+            *, BD, CC = data.split('.')
+            bdate = datetime.strptime(BD, '%Y-%m-%d').date()
+            response = crawlers.getAvailability(CC, bdate)
+            bot.sendMessage(chat_id=chat_id, text=response)
 
     # only able to handle direct chat messages for now
     if not hasattr(update.message, 'chat'):
